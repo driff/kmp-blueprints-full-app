@@ -1,0 +1,101 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Detekt + ktlint
+        run: ./gradlew detekt ktlintCheck
+
+  kmp-compile:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Cache Kotlin/Native (Konan)
+        uses: actions/cache@v5
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('**/*.gradle*', 'gradle/libs.versions.toml') }}
+      - name: Compile shared for Android + Desktop
+        run: ./gradlew :shared:compileAndroidMain :shared:compileKotlinDesktop
+
+  android-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Assemble debug APK
+        run: ./gradlew :androidApp:assembleDebug
+      - uses: actions/upload-artifact@v5
+        with:
+          name: android-debug-apk
+          path: androidApp/build/outputs/apk/debug/*.apk
+          retention-days: 7
+
+  desktop-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Assemble desktop JAR
+        run: ./gradlew :desktopApp:assemble
+
+  ios-build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Cache Kotlin/Native (Konan)
+        uses: actions/cache@v5
+        with:
+          path: ~/.konan
+          key: konan-macos-${{ hashFiles('**/*.gradle*', 'gradle/libs.versions.toml') }}
+      - name: Regenerate Xcode project from project.yml
+        run: (cd iosApp && xcodegen generate)
+      - name: Build iOS app for simulator (no signing)
+        run: |
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath iosApp/build/derivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            build
