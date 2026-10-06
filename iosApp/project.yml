@@ -9,6 +9,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.10"
+    "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64  # shared defines iosSimulatorArm64 only
     ENABLE_USER_SCRIPT_SANDBOXING: NO   # required for embedAndSignAppleFrameworkForXcode
     ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
 

@@ -21,7 +21,5 @@ allprojects {
         buildUponDefaultConfig = true
         autoCorrect = false
     }
-    // NOTE: detekt-formatting ruleset is deferred — not yet published at 2.0.0-alpha.3.
-    // The base ruleset (which includes ForbiddenImport, our Clean Architecture rule) is enough.
-    // ktlint covers the formatting concerns formatting-ruleset would have caught.
+    // ktlint handles formatting; Detekt uses its base ruleset.
 }
