@@ -8,7 +8,7 @@ plugins {
 kotlin {
     jvmToolchain(25)
 
-    androidLibrary {
+    android {
         namespace = "com.example.kmpblueprint.shared"
         compileSdk = libs.versions.android.compile.sdk.get().toInt()
         minSdk = libs.versions.android.min.sdk.get().toInt()

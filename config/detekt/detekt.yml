@@ -1,4 +1,4 @@
-# Detekt 2.0.0-alpha.3 config.
+# Detekt 2.0.0-alpha.6 config.
 #
 # NOTE: the Clean Architecture boundary rule (domain/ may not import data/ or
 # presentation/) is intentionally NOT enforced here yet. detekt's stock
